@@ -1,9 +1,11 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import collections
 import scipy
 import numpy as np
 import sys
+import community as community_louvain
 from numpy import genfromtxt
 
 def choose_network(graph_n):
@@ -11,28 +13,22 @@ def choose_network(graph_n):
 
     if graph_n == 1:
         # Ler Word Adjancencies Network
-        graph = nx.read_gml("networks_data/adjnoun.gml")
-        nx.draw(graph, with_labels=1)
+
+        graph = read_graph('gml', 'networks_data/adjnoun.gml')
+        draw_graph(graph)
+
     elif graph_n == 2:
         # Ler Italian Gangs Network
-        graph_data = genfromtxt('networks_data/italian_gangs.csv', delimiter=',')
-        adjacency = graph_data[1:,1:]
-        rows, cols = np.where(adjacency == 1)
-        edges = zip(rows.tolist(), cols.tolist())
-        graph = nx.Graph()
-        graph.add_edges_from(edges)
 
-        countries_data = genfromtxt('networks_data/italian_gangs_attr.csv', delimiter=',')
-        countries = countries_data[1:,-1]
-        countries_dict = {}
-        for i in range(len(countries)):
-            countries_dict[i] = {"country" : int(countries[i])}
-        nx.set_node_attributes(graph, countries_dict)
-        nx.draw(graph, labels=nx.get_node_attributes(graph, "country"), with_labels=1)
+        graph = read_graph('c_edgelist', 'networks_data/italian_gangs.csv', attr_path='networks_data/italian_gangs_attr.csv')
+        draw_graph(graph, nx.get_node_attributes(graph, "country"))
+
     elif graph_n == 3:
         # Ler JUnit Framework Dependencies Network
-        graph = nx.read_edgelist('networks_data/junit.txt', comments='#')
-        nx.draw(graph, with_labels=1)
+
+        graph = read_graph('s_edgelist', 'networks_data/junit.txt', comments='#')
+        draw_graph(graph)
+
     else:
         print('Choose a graph between 1 and 3!')
         print('     1 - Word Adjancecies')
@@ -42,6 +38,7 @@ def choose_network(graph_n):
 
     print(nx.info(graph))
     plt.show()
+    show_communities(graph)
 
     print("<k> : " + str(avg_degree(graph)))
     print("The Average Path Length is: ", avg_shortest_path_length(graph))
@@ -49,7 +46,50 @@ def choose_network(graph_n):
     # print("O real cluster é : ", nx.clustering(graph, 2))
     print("The FAKE average cluster coefficient is: ", avg_cluster_coefficient(graph))
     print("The REAL average cluster coefficient is: ", nx.average_clustering(graph))
+    print("Betweeness Centrality is: ", nx.betweenness_centrality(graph))
+    # print("Closeness Centrality is: ", nx.closeness_centrality(graph))
+    # print("Degree Centrality is: ", nx.degree_centrality(graph))
     degree_dist(graph)
+
+def read_graph(g_type, path, attr_path=None, comments='#'):
+    graph = None
+    if g_type == "gml":
+        graph = nx.read_gml(path)
+
+    elif g_type == "s_edgelist":
+        graph = nx.read_edgelist(path, comments=comments)
+
+    elif g_type == "c_edgelist":
+        graph_data = genfromtxt(path, delimiter=',')
+        adjacency = graph_data[1:,1:]
+        rows, cols = np.where(adjacency == 1)
+        edges = zip(rows.tolist(), cols.tolist())
+        graph = nx.Graph()
+        graph.add_edges_from(edges)
+
+        countries_data = genfromtxt(attr_path, delimiter=',')
+        countries = countries_data[1:,-1]
+        countries_dict = {}
+        for i in range(len(countries)):
+            countries_dict[i] = {"country" : int(countries[i])}
+        nx.set_node_attributes(graph, countries_dict)
+    
+    return graph
+
+def draw_graph(graph, labels=None):
+    pos = nx.spring_layout(graph)
+    nx.draw(graph, pos, with_labels=1, labels=labels)
+
+def show_communities(G):
+    partition = community_louvain.best_partition(G)
+    pos = nx.spring_layout(G)
+
+    # color the nodes according to their partition
+    cmap = cm.get_cmap('viridis', max(partition.values()) + 1)
+    nx.draw_networkx_nodes(G, pos, partition.keys(), node_size=200, cmap=cmap, node_color=list(partition.values()))
+    nx.draw_networkx_edges(G, pos, alpha=0.5)
+    nx.draw_networkx_labels(G, pos, labels=nx.get_node_attributes(G, "country"))
+    plt.show()
 
 def avg_shortest_path_length(G):
     if nx.connected_components(G) == 1:
@@ -59,7 +99,6 @@ def avg_shortest_path_length(G):
         for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
             components_apl.append(nx.average_shortest_path_length(C))
         return components_apl
-
 
 def degree_dist(G):
     degree_sequence = sorted([d for n, d in G.degree()], reverse=True)  # degree sequence
