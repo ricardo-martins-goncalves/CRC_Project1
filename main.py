@@ -44,13 +44,21 @@ def choose_network(graph_n):
     plt.show()
 
     print("<k> : " + str(avg_degree(graph)))
-    print("A average path length é: ", nx.average_shortest_path_length(graph))
+    print("The Average Path Length is: ", avg_shortest_path_length(graph))
     # print("O meu cluster é : ", cluster_coefficient_of_node(graph, 2))
     # print("O real cluster é : ", nx.clustering(graph, 2))
     print("The FAKE average cluster coefficient is: ", avg_cluster_coefficient(graph))
     print("The REAL average cluster coefficient is: ", nx.average_clustering(graph))
     degree_dist(graph)
 
+def avg_shortest_path_length(G):
+    if nx.connected_components(G) == 1:
+        return nx.average_shortest_path_length(G)
+    else:
+        components_apl = []
+        for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
+            components_apl.append(nx.average_shortest_path_length(C))
+        return components_apl
 
 
 def degree_dist(G):
