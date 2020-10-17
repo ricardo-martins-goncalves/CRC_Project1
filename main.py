@@ -93,15 +93,21 @@ def show_communities(G):
     plt.show()
 
 def avg_shortest_path_length(G):
-    if (G.is_directed() and nx.is_weakly_connected(G)) or (G.is_directed()):
-        return nx.average_shortest_path_length(G)
-    elif nx.connected_components(G) != 1:
+    if not G.is_directed():
+        if nx.connected_components(G) == 1:
+            return nx.average_shortest_path_length(G)
+        else:
+            components_apl = []
+            for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
+                components_apl.append(nx.average_shortest_path_length(C))
+            return components_apl
+    elif G.is_directed() and nx.is_weakly_connected(G):
         components_apl = []
-        for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
+        for C in (G.subgraph(c).copy() for c in nx.weakly_connected_components(G)):
             components_apl.append(nx.average_shortest_path_length(C))
         return components_apl
     else:
-        return None
+        None
 
 def degree_dist(G):
     degree_sequence = sorted([d for n, d in G.degree()], reverse=True)  # degree sequence
