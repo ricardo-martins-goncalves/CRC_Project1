@@ -38,7 +38,8 @@ def choose_network(graph_n):
 
     print(nx.info(graph))
     plt.show()
-    show_communities(graph)
+    if not graph.is_directed():
+        show_communities(graph)
 
     print("<k> : " + str(avg_degree(graph)))
     print("The Average Path Length is: ", avg_shortest_path_length(graph))
@@ -57,7 +58,7 @@ def read_graph(g_type, path, attr_path=None, comments='#'):
         graph = nx.read_gml(path)
 
     elif g_type == "s_edgelist":
-        graph = nx.read_edgelist(path, comments=comments)
+        graph = nx.read_edgelist(path, comments=comments, create_using=nx.DiGraph)
 
     elif g_type == "c_edgelist":
         graph_data = genfromtxt(path, delimiter=',')
@@ -77,7 +78,7 @@ def read_graph(g_type, path, attr_path=None, comments='#'):
     return graph
 
 def draw_graph(graph, labels=None):
-    pos = nx.spring_layout(graph)
+    pos = nx.shell_layout(graph)
     nx.draw(graph, pos, with_labels=1, labels=labels)
 
 def show_communities(G):
@@ -92,13 +93,15 @@ def show_communities(G):
     plt.show()
 
 def avg_shortest_path_length(G):
-    if nx.connected_components(G) == 1:
+    if (G.is_directed() and nx.is_weakly_connected(G)) or (G.is_directed()):
         return nx.average_shortest_path_length(G)
-    else:
+    elif nx.connected_components(G) != 1:
         components_apl = []
         for C in (G.subgraph(c).copy() for c in nx.connected_components(G)):
             components_apl.append(nx.average_shortest_path_length(C))
         return components_apl
+    else:
+        return None
 
 def degree_dist(G):
     degree_sequence = sorted([d for n, d in G.degree()], reverse=True)  # degree sequence
