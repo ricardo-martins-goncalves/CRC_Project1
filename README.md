@@ -2,9 +2,9 @@
 Projecto 1
 
 Grupo 15
-89905, João Gomes
-98649, Pedro Guerra
-98668, Ricardo Gonçalves
+- 89905, João Gomes
+- 98649, Pedro Guerra
+- 98668, Ricardo Gonçalves
 
 ### References
 - L. Šubelj, & M. Bajec, "Community structure of complex software systems: Analysis and applications." Physica A 390(16), 2968-2975 (2011). [JUnit Dependecies](https://wwwlovre.appspot.com/support.jsp)
